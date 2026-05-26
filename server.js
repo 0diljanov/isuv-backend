@@ -102,6 +102,22 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_tx_ts ON transactions(ts DESC);
 `);
 
+// ─── Auto-seed: вставляем устройства если таблица пустая ─────────────────────
+{
+  const cnt = db.prepare('SELECT COUNT(*) as c FROM devices').get().c;
+  if (cnt === 0) {
+    console.log('[DB] Таблица устройств пустая — запускаем seed...');
+    try {
+      require('child_process').execSync('node seed.js', { stdio: 'inherit', cwd: __dirname });
+      console.log('[DB] Seed завершён успешно');
+    } catch (e) {
+      console.error('[DB] Ошибка seed:', e.message);
+    }
+  } else {
+    console.log(`[DB] Устройств в базе: ${cnt}`);
+  }
+}
+
 // ─── WebSocket: рассылка всем клиентам ───────────────────────────────────────
 function broadcast(data) {
   const msg = JSON.stringify(data);
